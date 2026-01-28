@@ -1,0 +1,11 @@
+click>=8.0
+requests>=2.26
+tqdm>=4.62
+pyspng
+ninja>=1.10
+imageio-ffmpeg>=0.4.3
+torch>=2.0.0
+torchvision>=0.15.0
+scipy>=1.7
+numpy>=1.21
+psutil
