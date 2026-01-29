@@ -257,9 +257,13 @@ def compute_feature_stats_for_generator(opts, detector_url, detector_kwargs, rel
     detector = get_feature_detector(url=detector_url, device=opts.device, num_gpus=opts.num_gpus, rank=opts.rank, verbose=progress.verbose)
 
     # Main loop.
+    print("Generating images... \nIteration: ",end='')
+    itr = 1
     while not stats.is_full():
         images = []
+        print(f'{itr}, ',end='')
         for _i in range(batch_size // batch_gen):
+            print('.',end='') if _i % 8 == 0 else None
             z = torch.randn([batch_gen, G.z_dim], device=opts.device)
             c = [dataset.get_label(np.random.randint(len(dataset))) for _i in range(batch_gen)]
             c = torch.from_numpy(np.stack(c)).pin_memory().to(opts.device)
@@ -270,6 +274,8 @@ def compute_feature_stats_for_generator(opts, detector_url, detector_kwargs, rel
         features = detector(images, **detector_kwargs)
         stats.append_torch(features, num_gpus=opts.num_gpus, rank=opts.rank)
         progress.update(stats.num_items)
+        itr += 1
+    print('\n Finished generating images.')
     return stats
 
 #----------------------------------------------------------------------------

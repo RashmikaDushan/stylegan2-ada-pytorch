@@ -371,6 +371,7 @@ def training_loop(
             if rank == 0:
                 print('Evaluating metrics...')
             for metric in metrics:
+                print("Calculating metric:", metric)
                 result_dict = metric_main.calc_metric(metric=metric, G=snapshot_data['G_ema'],
                     dataset_kwargs=training_set_kwargs, num_gpus=num_gpus, rank=rank, device=device)
                 if rank == 0:
@@ -378,8 +379,10 @@ def training_loop(
                 stats_metrics.update(result_dict.results)
         del snapshot_data # conserve memory
 
+        print("Collecting statistics...")
         # Collect statistics.
         for phase in phases:
+            print("Collecting phase timing:", phase.name)
             value = []
             if (phase.start_event is not None) and (phase.end_event is not None):
                 phase.end_event.synchronize()
@@ -389,6 +392,7 @@ def training_loop(
         stats_dict = stats_collector.as_dict()
 
         # Update logs.
+        print("Updating logs...")
         timestamp = time.time()
         if stats_jsonl is not None:
             fields = dict(stats_dict, timestamp=timestamp)
