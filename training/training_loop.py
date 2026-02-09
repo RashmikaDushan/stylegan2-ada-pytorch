@@ -236,6 +236,10 @@ def training_loop(
             drive_img_path = os.path.join('/content/drive/MyDrive/FYP/', 'fakes_init.png')
             local_img_path = os.path.join(run_dir, 'fakes_init.png')
             shutil.copyfile(local_img_path, drive_img_path)
+
+            drive_log_path = os.path.join('/content/drive/MyDrive/FYP/', 'log.txt')
+            local_log_path = os.path.join(run_dir, 'log.txt')
+            shutil.copyfile(local_log_path, drive_log_path)
             # -----------------------
 
     # Initialize logs.
@@ -368,6 +372,10 @@ def training_loop(
                 # --- BACKUP TO DRIVE ---
                 drive_img_path = os.path.join('/content/drive/MyDrive/FYP/', f'fakes{cur_nimg//1000:06d}.png')
                 shutil.copyfile(snapshot_img_path, drive_img_path)
+
+                drive_log_path = os.path.join('/content/drive/MyDrive/FYP/', 'log.txt')
+                local_log_path = os.path.join(run_dir, 'log.txt')
+                shutil.copyfile(local_log_path, drive_log_path)
                 # -----------------------
 
         # Save network snapshot.
