@@ -234,6 +234,9 @@ def training_loop(
 
         if colab:
             # --- BACKUP TO DRIVE ---
+            folder_path = os.path.join('/content/drive/MyDrive',path)
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
             drive_img_path = os.path.join('/content/drive/MyDrive',path, 'fakes_init.png')
             local_img_path = os.path.join(run_dir, 'fakes_init.png')
             shutil.copyfile(local_img_path, drive_img_path)
