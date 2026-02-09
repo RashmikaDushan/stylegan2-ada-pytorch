@@ -32,6 +32,7 @@ class UserError(Exception):
 def setup_training_loop_kwargs(
     # General options (not included in desc).
     colab      = None, # Whether to run in Colab environment: <bool>, default = False
+    path       = None, # Path to backup data to colab: <path>, default = None
     gpus       = None, # Number of GPUs: <int>, default = 1 gpu
     snap       = None, # Snapshot interval: <int>, default = 50 ticks
     metrics    = None, # List of metric names: [], ['fid50k_full'] (default), ...
@@ -74,6 +75,8 @@ def setup_training_loop_kwargs(
 
     if colab is None:
         colab = False
+    if path is None:
+        path = 'training-runs'
     if gpus is None:
         gpus = 1
     assert isinstance(gpus, int)
@@ -81,6 +84,7 @@ def setup_training_loop_kwargs(
         raise UserError('--gpus must be a power of two')
     args.num_gpus = gpus
     args.colab = colab
+    args.path = path
 
     if snap is None:
         snap = 50
@@ -384,7 +388,7 @@ def subprocess_fn(rank, args, temp_dir):
         custom_ops.verbosity = 'none'
 
     # Execute training loop.
-    training_loop.training_loop(rank=rank,colab=args.colab,**args)
+    training_loop.training_loop(rank=rank,colab=args.colab,path=args.path,**args)
 
 #----------------------------------------------------------------------------
 

@@ -90,6 +90,7 @@ def save_image_grid(img, fname, drange, grid_size):
 def training_loop(
     run_dir                 = '.',      # Output directory.
     colab                   = False,    # Whether to run in Colab environment.
+    path                    = None,     # Path to backup data to colab.
     training_set_kwargs     = {},       # Options for training set.
     data_loader_kwargs      = {},       # Options for torch.utils.data.DataLoader.
     G_kwargs                = {},       # Options for generator network.
@@ -233,11 +234,11 @@ def training_loop(
 
         if colab:
             # --- BACKUP TO DRIVE ---
-            drive_img_path = os.path.join('/content/drive/MyDrive/FYP/', 'fakes_init.png')
+            drive_img_path = os.path.join('/content/drive/MyDrive',path, 'fakes_init.png')
             local_img_path = os.path.join(run_dir, 'fakes_init.png')
             shutil.copyfile(local_img_path, drive_img_path)
 
-            drive_log_path = os.path.join('/content/drive/MyDrive/FYP/', 'log.txt')
+            drive_log_path = os.path.join('/content/drive/MyDrive',path, 'log.txt')
             local_log_path = os.path.join(run_dir, 'log.txt')
             shutil.copyfile(local_log_path, drive_log_path)
             # -----------------------
@@ -370,10 +371,10 @@ def training_loop(
             
             if colab:
                 # --- BACKUP TO DRIVE ---
-                drive_img_path = os.path.join('/content/drive/MyDrive/FYP/', f'fakes{cur_nimg//1000:06d}.png')
+                drive_img_path = os.path.join('/content/drive/MyDrive',path, f'fakes{cur_nimg//1000:06d}.png')
                 shutil.copyfile(snapshot_img_path, drive_img_path)
 
-                drive_log_path = os.path.join('/content/drive/MyDrive/FYP/', 'log.txt')
+                drive_log_path = os.path.join('/content/drive/MyDrive',path, 'log.txt')
                 local_log_path = os.path.join(run_dir, 'log.txt')
                 shutil.copyfile(local_log_path, drive_log_path)
                 # -----------------------
@@ -397,7 +398,7 @@ def training_loop(
                 
                 if colab:
                     # --- BACKUP TO DRIVE ---
-                    drive_pkl_path = os.path.join('/content/drive/MyDrive/FYP/', f'network-snapshot-{cur_nimg//1000:06d}.pkl')
+                    drive_pkl_path = os.path.join('/content/drive/MyDrive',path, f'network-snapshot-{cur_nimg//1000:06d}.pkl')
                     shutil.copyfile(snapshot_pkl, drive_pkl_path)
                     print(f'Backup saved to Drive: {f'network-snapshot-{cur_nimg//1000:06d}.pkl'}')
                     # -----------------------
