@@ -407,6 +407,8 @@ class CommaSeparatedList(click.ParamType):
 @click.pass_context
 
 # General options.
+@click.option('--colab', help='Whether to run in Colab environment', metavar='BOOL')
+@click.option('--path', help='Path to backup data to colab', metavar='DIR')
 @click.option('--outdir', help='Where to save the results', required=True, metavar='DIR')
 @click.option('--gpus', help='Number of GPUs to use [default: 1]', type=int, metavar='INT')
 @click.option('--snap', help='Snapshot interval [default: 50 ticks]', type=int, metavar='INT')
