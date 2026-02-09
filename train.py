@@ -390,7 +390,7 @@ def subprocess_fn(rank, args, temp_dir):
         custom_ops.verbosity = 'none'
 
     # Execute training loop.
-    training_loop.training_loop(rank=rank,colab=args.colab,path=args.path,**args)
+    training_loop.training_loop(rank=rank,**args)
 
 #----------------------------------------------------------------------------
 
