@@ -21,6 +21,7 @@ from torch_utils import training_stats
 from torch_utils.ops import conv2d_gradfix
 from torch_utils.ops import grid_sample_gradfix
 import shutil
+import datetime
 
 import legacy
 from metrics import metric_main
@@ -122,6 +123,8 @@ def training_loop(
     progress_fn             = None,     # Callback function for updating training progress. Called for all ranks.
 ):
     # Initialize.
+    now = datetime.datetime.now()
+    print(now.strftime("%Y-%m-%d %H:%M:%S"))
     start_time = time.time()
     device = torch.device('cuda', rank)
     np.random.seed(random_seed * num_gpus + rank)
@@ -328,6 +331,8 @@ def training_loop(
         if (not done) and (cur_tick != 0) and (cur_nimg < tick_start_nimg + kimg_per_tick * 1000):
             continue
 
+        now = datetime.datetime.now()
+        print(now.strftime("%Y-%m-%d %H:%M:%S"))
         # Print status line, accumulating the same information in stats_collector.
         tick_end_time = time.time()
         fields = []
@@ -392,6 +397,8 @@ def training_loop(
         # Evaluate metrics.
         if (snapshot_data is not None) and (len(metrics) > 0):
             if rank == 0:
+                now = datetime.datetime.now()
+                print(now.strftime("%Y-%m-%d %H:%M:%S"))
                 print('Evaluating metrics...')
             for metric in metrics:
                 print("Calculating metric:", metric)
