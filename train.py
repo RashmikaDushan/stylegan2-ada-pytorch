@@ -75,6 +75,8 @@ def setup_training_loop_kwargs(
 
     if colab is None:
         colab = False
+    else:
+        colab = True
     if path is None:
         path = 'training-runs'
     if gpus is None:
