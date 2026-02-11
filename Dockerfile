@@ -6,12 +6,13 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
-FROM nvcr.io/nvidia/pytorch:20.12-py3
+FROM nvcr.io/nvidia/pytorch:25.01-py3
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-RUN pip install imageio-ffmpeg==0.4.3 pyspng==0.1.0
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt
 
 WORKDIR /workspace
 
