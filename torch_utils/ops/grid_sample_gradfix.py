@@ -34,7 +34,7 @@ def grid_sample(input, grid):
 def _should_use_custom_op():
     if not enabled:
         return False
-    if any(torch.__version__.startswith(x) for x in ['1.7.', '1.8.', '1.9']):
+    if any(torch.__version__.startswith(x) for x in ['1.7.', '1.8.', '1.9','2.9','2.10']):
         return True
     if torch.__version__.startswith('2.'):
         return False
@@ -63,8 +63,8 @@ class _GridSample2dForward(torch.autograd.Function):
 class _GridSample2dBackward(torch.autograd.Function):
     @staticmethod
     def forward(ctx, grad_output, input, grid):
-        op = torch._C._jit_get_operation('aten::grid_sampler_2d_backward')
-        grad_input, grad_grid = op(grad_output, input, grid, 0, 0, False)
+        op,_ = torch._C._jit_get_operation('aten::grid_sampler_2d_backward')
+        grad_input, grad_grid = op(grad_output, input, grid, 0, 0, False, [True, True])
         ctx.save_for_backward(grid)
         return grad_input, grad_grid
 

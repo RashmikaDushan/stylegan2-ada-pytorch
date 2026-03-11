@@ -60,6 +60,7 @@ def get_plugin(module_name, sources, **build_kwargs):
         # Make sure we can find the necessary compiler binaries.
         if os.name == 'nt' and os.system("where cl.exe >nul 2>nul") != 0:
             compiler_bindir = _find_compiler_bindir()
+            print("Compiler bin dir: ",compiler_bindir)
             if compiler_bindir is None:
                 raise RuntimeError(f'Could not find MSVC/GCC/CLANG installation on this computer. Check _find_compiler_bindir() in "{__file__}".')
             os.environ['PATH'] += ';' + compiler_bindir

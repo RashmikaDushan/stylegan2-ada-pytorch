@@ -42,11 +42,14 @@ def calc_metric(metric, **kwargs): # See metric_utils.MetricOptions for the full
 
     # Calculate.
     start_time = time.time()
+    print('Starting metric ', metric)
     results = _metric_dict[metric](opts)
     total_time = time.time() - start_time
+    print(f'Metric {metric} took {dnnlib.util.format_time(total_time)}.')
 
     # Broadcast results.
     for key, value in list(results.items()):
+        print(f'{key}: {value}')
         if opts.num_gpus > 1:
             value = torch.as_tensor(value, dtype=torch.float64, device=opts.device)
             torch.distributed.broadcast(tensor=value, src=0)

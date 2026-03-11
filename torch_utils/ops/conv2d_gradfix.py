@@ -50,7 +50,7 @@ def _should_use_custom_op(input):
         return False
     if input.device.type != 'cuda':
         return False
-    if any(torch.__version__.startswith(x) for x in ['1.7.', '1.8.', '1.9']):
+    if any(torch.__version__.startswith(x) for x in ['1.7.', '1.8.', '1.9','2.9','2.10']):
         return True
     if torch.__version__.startswith('2.'):
         return False
@@ -142,9 +142,15 @@ def _conv2d_gradfix(transpose, weight_shape, stride, padding, output_padding, di
     class Conv2dGradWeight(torch.autograd.Function):
         @staticmethod
         def forward(ctx, grad_output, input):
-            op = torch._C._jit_get_operation('aten::cudnn_convolution_backward_weight' if not transpose else 'aten::cudnn_convolution_transpose_backward_weight')
-            flags = [torch.backends.cudnn.benchmark, torch.backends.cudnn.deterministic, torch.backends.cudnn.allow_tf32]
-            grad_weight = op(weight_shape, grad_output, input, padding, stride, dilation, groups, *flags)
+            weight = input.new_empty(weight_shape)
+
+            output_mask = [False, True, False]
+            
+            grads = torch.ops.aten.convolution_backward(
+                grad_output, input, weight, None, stride, padding, 
+                dilation, transpose, [0, 0], groups, output_mask
+            )
+            grad_weight = grads[1]
             assert grad_weight.shape == weight_shape
             ctx.save_for_backward(grad_output, input)
             return grad_weight

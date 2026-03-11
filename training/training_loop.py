@@ -20,6 +20,8 @@ from torch_utils import misc
 from torch_utils import training_stats
 from torch_utils.ops import conv2d_gradfix
 from torch_utils.ops import grid_sample_gradfix
+import shutil
+import datetime
 
 import legacy
 from metrics import metric_main
@@ -87,6 +89,8 @@ def save_image_grid(img, fname, drange, grid_size):
 
 def training_loop(
     run_dir                 = '.',      # Output directory.
+    colab                   = False,    # Whether to run in Colab environment.
+    path                    = None,     # Path to backup data to colab.
     training_set_kwargs     = {},       # Options for training set.
     data_loader_kwargs      = {},       # Options for torch.utils.data.DataLoader.
     G_kwargs                = {},       # Options for generator network.
@@ -120,6 +124,8 @@ def training_loop(
     progress_fn             = None,     # Callback function for updating training progress. Called for all ranks.
 ):
     # Initialize.
+    now = datetime.datetime.now()
+    print(now.strftime("%Y-%m-%d %H:%M:%S"))
     start_time = time.time()
     device = torch.device('cuda', rank)
     np.random.seed(random_seed * num_gpus + rank)
@@ -226,6 +232,20 @@ def training_loop(
         images = torch.cat([G_ema(z=z, c=c, noise_mode='const').cpu() for z, c in zip(grid_z, grid_c)]).numpy()
         save_image_grid(images, os.path.join(run_dir, 'fakes_init.png'), drange=[-1,1], grid_size=grid_size)
 
+        if colab:
+            # --- BACKUP TO DRIVE ---
+            folder_path = os.path.join('/content/drive/MyDrive',path)
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
+            drive_img_path = os.path.join('/content/drive/MyDrive',path, 'fakes_init.png')
+            local_img_path = os.path.join(run_dir, 'fakes_init.png')
+            shutil.copyfile(local_img_path, drive_img_path)
+
+            drive_log_path = os.path.join('/content/drive/MyDrive',path, 'log.txt')
+            local_log_path = os.path.join(run_dir, 'log.txt')
+            shutil.copyfile(local_log_path, drive_log_path)
+            # -----------------------
+
     # Initialize logs.
     if rank == 0:
         print('Initializing logs...')
@@ -319,6 +339,8 @@ def training_loop(
         if (not done) and (cur_tick != 0) and (cur_nimg < tick_start_nimg + kimg_per_tick * 1000):
             continue
 
+        now = datetime.datetime.now()
+        print(now.strftime("%Y-%m-%d %H:%M:%S"))
         # Print status line, accumulating the same information in stats_collector.
         tick_end_time = time.time()
         fields = []
@@ -347,7 +369,18 @@ def training_loop(
         # Save image snapshot.
         if (rank == 0) and (image_snapshot_ticks is not None) and (done or cur_tick % image_snapshot_ticks == 0):
             images = torch.cat([G_ema(z=z, c=c, noise_mode='const').cpu() for z, c in zip(grid_z, grid_c)]).numpy()
-            save_image_grid(images, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}.png'), drange=[-1,1], grid_size=grid_size)
+            snapshot_img_path = os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}.png')
+            save_image_grid(images, snapshot_img_path, drange=[-1,1], grid_size=grid_size)
+            
+            if colab:
+                # --- BACKUP TO DRIVE ---
+                drive_img_path = os.path.join('/content/drive/MyDrive',path, f'fakes{cur_nimg//1000:06d}.png')
+                shutil.copyfile(snapshot_img_path, drive_img_path)
+
+                drive_log_path = os.path.join('/content/drive/MyDrive',path, 'log.txt')
+                local_log_path = os.path.join(run_dir, 'log.txt')
+                shutil.copyfile(local_log_path, drive_log_path)
+                # -----------------------
 
         # Save network snapshot.
         snapshot_pkl = None
@@ -365,12 +398,22 @@ def training_loop(
             if rank == 0:
                 with open(snapshot_pkl, 'wb') as f:
                     pickle.dump(snapshot_data, f)
+                
+                if colab:
+                    # --- BACKUP TO DRIVE ---
+                    drive_pkl_path = os.path.join('/content/drive/MyDrive',path, f'network-snapshot-{cur_nimg//1000:06d}.pkl')
+                    shutil.copyfile(snapshot_pkl, drive_pkl_path)
+                    print(f'Backup saved to Drive: {f'network-snapshot-{cur_nimg//1000:06d}.pkl'}')
+                    # -----------------------
 
         # Evaluate metrics.
         if (snapshot_data is not None) and (len(metrics) > 0):
             if rank == 0:
+                now = datetime.datetime.now()
+                print(now.strftime("%Y-%m-%d %H:%M:%S"))
                 print('Evaluating metrics...')
             for metric in metrics:
+                print("Calculating metric:", metric)
                 result_dict = metric_main.calc_metric(metric=metric, G=snapshot_data['G_ema'],
                     dataset_kwargs=training_set_kwargs, num_gpus=num_gpus, rank=rank, device=device)
                 if rank == 0:
@@ -378,8 +421,10 @@ def training_loop(
                 stats_metrics.update(result_dict.results)
         del snapshot_data # conserve memory
 
+        print("Collecting statistics...")
         # Collect statistics.
         for phase in phases:
+            print("Collecting phase timing:", phase.name)
             value = []
             if (phase.start_event is not None) and (phase.end_event is not None):
                 phase.end_event.synchronize()
@@ -389,6 +434,7 @@ def training_loop(
         stats_dict = stats_collector.as_dict()
 
         # Update logs.
+        print("Updating logs...")
         timestamp = time.time()
         if stats_jsonl is not None:
             fields = dict(stats_dict, timestamp=timestamp)

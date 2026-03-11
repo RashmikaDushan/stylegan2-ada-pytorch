@@ -31,6 +31,8 @@ class UserError(Exception):
 
 def setup_training_loop_kwargs(
     # General options (not included in desc).
+    colab      = None, # Whether to run in Colab environment: <bool>, default = False
+    path       = None, # Path to backup data to colab: <path>, default = None
     gpus       = None, # Number of GPUs: <int>, default = 1 gpu
     snap       = None, # Snapshot interval: <int>, default = 50 ticks
     metrics    = None, # List of metric names: [], ['fid50k_full'] (default), ...
@@ -71,12 +73,20 @@ def setup_training_loop_kwargs(
     # General options: gpus, snap, metrics, seed
     # ------------------------------------------
 
+    if colab is None:
+        colab = False
+    else:
+        colab = True
+    if path is None:
+        path = 'training-runs'
     if gpus is None:
         gpus = 1
     assert isinstance(gpus, int)
     if not (gpus >= 1 and gpus & (gpus - 1) == 0):
         raise UserError('--gpus must be a power of two')
     args.num_gpus = gpus
+    args.colab = colab
+    args.path = path
 
     if snap is None:
         snap = 50
@@ -380,7 +390,7 @@ def subprocess_fn(rank, args, temp_dir):
         custom_ops.verbosity = 'none'
 
     # Execute training loop.
-    training_loop.training_loop(rank=rank, **args)
+    training_loop.training_loop(rank=rank,**args)
 
 #----------------------------------------------------------------------------
 
@@ -399,6 +409,8 @@ class CommaSeparatedList(click.ParamType):
 @click.pass_context
 
 # General options.
+@click.option('--colab', help='Whether to run in Colab environment', metavar='BOOL')
+@click.option('--path', help='Path to backup data to colab', metavar='DIR')
 @click.option('--outdir', help='Where to save the results', required=True, metavar='DIR')
 @click.option('--gpus', help='Number of GPUs to use [default: 1]', type=int, metavar='INT')
 @click.option('--snap', help='Snapshot interval [default: 50 ticks]', type=int, metavar='INT')
