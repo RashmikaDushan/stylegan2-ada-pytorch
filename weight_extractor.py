@@ -105,6 +105,42 @@ def compare_and_build_pickle(old_path, new_path, threshold, output_path=None):
 
     return result_data
 
+def mix_and_build_pickle(old_path, new_path, output_path=None, gamma=2.0):
+    data_old = load_pickle(old_path)
+    data_new = load_pickle(new_path)
+
+    result_data = copy.deepcopy(data_old)
+
+    g_old = data_old['G_ema']
+    g_new = data_new['G_ema']
+    g_result = result_data['G_ema']
+
+    state_old = g_old.state_dict()
+    state_result = copy.deepcopy(state_old)
+
+    with torch.no_grad():
+        for name, param_new in g_new.named_parameters():
+            if name in state_old:
+                param_old = state_old[name]
+                diff = param_new - param_old
+                max_diff = torch.max(torch.abs(diff))
+                if max_diff > 0:
+                    diff_normalized = diff / max_diff
+
+                # Power scaling: preserves sign, suppresses small diffs, keeps large ones
+                scaled_diff = torch.sign(diff_normalized) * (torch.abs(diff_normalized) ** gamma)
+                scaled_diff = scaled_diff * max_diff
+
+                state_result[name] = param_old + scaled_diff
+
+    g_result.load_state_dict(state_result)
+
+    if output_path:
+        with open(output_path, "wb") as f:
+            pickle.dump(result_data, f)
+
+    return result_data
+
 if __name__ == "__main__":
     # network_old = load_pickle(OLD_MODEL_PATH)
     # network_new = load_pickle(NEW_MODEL_PATH)
@@ -113,4 +149,4 @@ if __name__ == "__main__":
     # synth_new = network_new['G_ema'].synthesis.to(DEVICE)
 
     # plot_weight_differences(synth_old, synth_new)
-    compare_and_build_pickle(OLD_MODEL_PATH, NEW_MODEL_PATH, 0.5, "ffhq-merged.pkl")
+    mix_and_build_pickle(OLD_MODEL_PATH, NEW_MODEL_PATH, "ffhq-merged.pkl", 1.2) # gamma = 1.2-1.8 worked quite well
